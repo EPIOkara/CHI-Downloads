@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tehsil & UC Management Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for sidebar and tables */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased overflow-hidden">
+
+    <div id="app" class="flex h-full w-full">
+        
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden transition-opacity"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out border-r border-slate-800">
+            <!-- Brand Header -->
+            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+                        <i data-lucide="layers" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-base tracking-tight">Admin Portal</h1>
+                        <p class="text-xs text-slate-400">Tehsil & UC Hub</p>
+                    </div>
+                </div>
+                <button id="sidebar-close" class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="px-4 py-4 space-y-1">
+                <p class="px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Main Menu</p>
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Dashboard Overview</span>
+                </button>
+                <button onclick="switchTab('tehsils')" id="nav-tehsils" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="map" class="w-4 h-4"></i>
+                    <span>Tehsils & UCs</span>
+                </button>
+                <button onclick="switchTab('workers')" id="nav-workers" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Workers Directory</span>
+                </button>
+                <button onclick="switchTab('files')" id="nav-files" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <i data-lucide="folder-down" class="w-4 h-4"></i>
+                    <span>Downloadable Files</span>
+                </button>
+            </div>
+
+            <!-- Folder Tree View in Sidebar -->
+            <div class="flex-1 overflow-y-auto px-4 py-4 border-t border-slate-800">
+                <div class="flex items-center justify-between mb-3 px-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Folder Tree</p>
+                    <button onclick="openFolderModal()" class="text-slate-400 hover:text-indigo-400 transition-colors" title="Add Folder">
+                        <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="sidebar-folder-tree" class="space-y-1 text-sm">
+                    <!-- Dynamic Folder Tree rendered via JS -->
+                </div>
+            </div>
+
+            <!-- Sidebar Footer / User Profile -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/30 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                        AD
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-white">System Admin</p>
+                        <p class="text-xs text-slate-400">admin@districthub.gov</p>
+                    </div>
+                </div>
+                <button onclick="showToast('Logged out securely', 'info')" class="text-slate-400 hover:text-rose-400 p-2 rounded-lg transition-colors" title="Logout">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+            
+            <!-- Top Header Navbar -->
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-30 shadow-xs">
+                <div class="flex items-center space-x-4">
+                    <button id="sidebar-toggle" class="md:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg focus:outline-hidden">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <!-- Breadcrumb -->
+                    <nav class="flex" aria-label="Breadcrumb">
+                        <ol id="breadcrumb-list" class="flex items-center space-x-2 text-sm text-slate-600">
+                            <!-- Breadcrumbs injected dynamically -->
+                        </ol>
+                    </nav>
+                </div>
+
+                <!-- Global Search & Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative hidden sm:block w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Search tehsils, UCs, workers..." class="w-full pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-sm focus:bg-white focus:border-indigo-500 focus:outline-hidden transition-all">
+                    </div>
+                    
+                    <!-- Quick Add Dropdown / Button -->
+                    <div class="relative">
+                        <button onclick="toggleQuickAddMenu()" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition-all shadow-indigo-600/20">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Add New</span>
+                            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                        <div id="quick-add-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                            <button onclick="openTehsilModal(); toggleQuickAddMenu();" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center space-x-2">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i><span>Add Tehsil</span>
+                            </button>
+                            <button onclick="openUcModal(); toggleQuickAddMenu();" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center space-x-2">
+                                <i data-lucide="flag" class="w-4 h-4"></i><span>Add Union Council</span>
+                            </button>
+                            <button onclick="openWorkerModal(); toggleQuickAddMenu();" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center space-x-2">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i><span>Add Worker</span>
+                            </button>
+                            <button onclick="openFileModal(); toggleQuickAddMenu();" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center space-x-2">
+                                <i data-lucide="file-up" class="w-4 h-4"></i><span>Upload File</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Dashboard Body -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                <section id="tab-dashboard" class="space-y-6">
+                    <!-- Welcome Banner -->
+                    <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center">
+                        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="relative z-10 max-w-2xl mb-4 md:mb-0">
+                            <span class="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">District Management Suite</span>
+                            <h2 class="text-2xl sm:text-3xl font-bold mt-3 tracking-tight">Tehsil, UC & Worker Database</h2>
+                            <p class="text-slate-300 text-sm mt-2 leading-relaxed">Organize administrative boundaries, track union council workers, manage folders, and distribute official downloadable documents effortlessly.</p>
+                        </div>
+                        <div class="relative z-10 flex flex-wrap gap-3">
+                            <button onclick="switchTab('tehsils')" class="bg-white text-indigo-900 hover:bg-indigo-50 px-5 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all flex items-center space-x-2">
+                                <i data-lucide="map" class="w-4 h-4"></i>
+                                <span>Manage Tehsils</span>
+                            </button>
+                            <button onclick="switchTab('files')" class="bg-indigo-600/60 hover:bg-indigo-600 text-white border border-indigo-400/30 px-5 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all flex items-center space-x-2">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Files Hub</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 uppercase">Total Tehsils</p>
+                                <h3 id="stat-tehsils" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                <i data-lucide="flag" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 uppercase">Union Councils (UCs)</p>
+                                <h3 id="stat-ucs" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <i data-lucide="users" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 uppercase">Active Workers</p>
+                                <h3 id="stat-workers" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4">
+                            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                                <i data-lucide="file-text" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 uppercase">Downloadable Files</p>
+                                <h3 id="stat-files" class="text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Folder Explorer Grid & Recent Activity -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Folder Explorer Card -->
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xs p-6 flex flex-col">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                        <i data-lucide="folder-open" class="w-5 h-5"></i>
+                                    </div>
+                                    <h3 class="font-bold text-slate-800 text-base">Folder Structure & Navigation</h3>
+                                </div>
+                                <button onclick="openFolderModal()" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center space-x-1">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span>New Folder</span>
+                                </button>
+                            </div>
+                            <p class="text-sm text-slate-500 mb-4">Click any folder below to filter Tehsils, UCs, and Files associated with that administrative zone.</p>
+                            
+                            <div id="dashboard-folder-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                                <!-- Dynamic folder cards injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Quick Summary / Quick Links -->
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center space-x-2 mb-4">
+                                    <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                        <i data-lucide="zap" class="w-5 h-5"></i>
+                                    </div>
+                                    <h3 class="font-bold text-slate-800 text-base">Quick Actions</h3>
+                                </div>
+                                <div class="space-y-3">
+                                    <button onclick="openTehsilModal()" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 transition-all text-sm font-medium text-slate-700 group">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                            </div>
+                                            <span>Register New Tehsil</span>
+                                        </div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 group-hover:text-indigo-600"></i>
+                                    </button>
+                                    <button onclick="openUcModal()" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition-all text-sm font-medium text-slate-700 group">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <i data-lucide="flag" class="w-4 h-4"></i>
+                                            </div>
+                                            <span>Add Union Council</span>
+                                        </div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 group-hover:text-blue-600"></i>
+                                    </button>
+                                    <button onclick="openWorkerModal()" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all text-sm font-medium text-slate-700 group">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                                            </div>
+                                            <span>Onboard Field Worker</span>
+                                        </div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 group-hover:text-emerald-600"></i>
+                                    </button>
+                                    <button onclick="openFileModal()" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition-all text-sm font-medium text-slate-700 group">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="p-2 bg-amber-100 text-amber-600 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                                <i data-lucide="file-up" class="w-4 h-4"></i>
+                                            </div>
+                                            <span>Upload Document / Form</span>
+                                        </div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 group-hover:text-amber-600"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400 flex items-center justify-between">
+                                <span>District Management v2.4</span>
+                                <span class="text-emerald-600 font-medium flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span> Live Sync
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-tehsils" class="space-y-6 hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">Tehsils & Union Councils</h2>
+                            <p class="text-sm text-slate-500 mt-1">Manage administrative tehsils and their respective union councils in structured folders.</p>
+                        </div>
+                        <div class="flex items-center space-x-3 w-full sm:w-auto">
+                            <button onclick="openTehsilModal()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Add Tehsil</span>
+                            </button>
+                            <button onclick="openUcModal()" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Add UC</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tehsils Accordion / Cards List -->
+                    <div id="tehsils-container" class="space-y-4">
+                        <!-- Dynamic Tehsil Cards injected via JS -->
+                    </div>
+                </section>
+
+                <section id="tab-workers" class="space-y-6 hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">Workers Directory</h2>
+                            <p class="text-sm text-slate-500 mt-1">Manage union council workers, field officers, and contact personnel.</p>
+                        </div>
+                        <button onclick="openWorkerModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center space-x-2">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>Add Worker</span>
+                        </button>
+                    </div>
+
+                    <!-- Workers Table View -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div class="flex items-center space-x-2 w-full sm:w-72">
+                                <span class="text-slate-400"><i data-lucide="search" class="w-4 h-4"></i></span>
+                                <input type="text" id="worker-table-search" oninput="filterWorkersTable(this.value)" placeholder="Filter workers by name, role, UC..." class="w-full text-sm border-0 focus:ring-0 focus:outline-hidden bg-transparent">
+                            </div>
+                            <div class="text-xs text-slate-500 font-medium" id="worker-count-label">Showing all workers</div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                                        <th class="py-3 px-6">Worker Name</th>
+                                        <th class="py-3 px-6">Role / Designation</th>
+                                        <th class="py-3 px-6">Tehsil & UC</th>
+                                        <th class="py-3 px-6">Contact Number</th>
+                                        <th class="py-3 px-6 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workers-table-body" class="divide-y divide-slate-100 text-sm">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-files" class="space-y-6 hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">Downloadable Files Hub</h2>
+                            <p class="text-sm text-slate-500 mt-1">Access official notifications, reports, forms, and maps categorized by folders.</p>
+                        </div>
+                        <button onclick="openFileModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center space-x-2">
+                            <i data-lucide="file-up" class="w-4 h-4"></i>
+                            <span>Upload File</span>
+                        </button>
+                    </div>
+
+                    <!-- Files Grid -->
+                    <div id="files-grid-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Dynamic file cards -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+
+    <!-- Tehsil Modal -->
+    <div id="modal-tehsil" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-in fade-in zoom-in-95">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="tehsil-modal-title" class="font-bold text-slate-800 text-base">Add New Tehsil</h3>
+                <button onclick="closeTehsilModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-tehsil" onsubmit="handleTehsilSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="tehsil-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tehsil Name</label>
+                    <input type="text" id="tehsil-name" required placeholder="e.g., Tehsil City / Saddar" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Assign to Folder</label>
+                    <select id="tehsil-folder" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <!-- Folders populated via JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Description / Notes</label>
+                    <textarea id="tehsil-desc" rows="3" placeholder="Brief summary of the tehsil..." class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeTehsilModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all">Save Tehsil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Union Council (UC) Modal -->
+    <div id="modal-uc" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="uc-modal-title" class="font-bold text-slate-800 text-base">Add Union Council (UC)</h3>
+                <button onclick="closeUcModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-uc" onsubmit="handleUcSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="uc-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Union Council Name / No.</label>
+                    <input type="text" id="uc-name" required placeholder="e.g., UC-01 Civil Lines" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Parent Tehsil</label>
+                    <select id="uc-tehsil" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <!-- Tehsils populated via JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Assigned Folder</label>
+                    <select id="uc-folder" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <!-- Folders populated via JS -->
+                    </select>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeUcModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all">Save Union Council</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Worker Modal -->
+    <div id="modal-worker" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="worker-modal-title" class="font-bold text-slate-800 text-base">Onboard Field Worker</h3>
+                <button onclick="closeWorkerModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-worker" onsubmit="handleWorkerSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="worker-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Worker Full Name</label>
+                    <input type="text" id="worker-name" required placeholder="e.g., Muhammad Ali" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Designation / Role</label>
+                    <input type="text" id="worker-role" required placeholder="e.g., UC Secretary / Field Coordinator" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tehsil</label>
+                        <select id="worker-tehsil" onchange="updateWorkerUcDropdown()" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                            <!-- Tehsils -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Union Council (UC)</label>
+                        <select id="worker-uc" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                            <!-- UCs -->
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Contact Phone Number</label>
+                    <input type="text" id="worker-phone" required placeholder="e.g., +92 300 1234567" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Folder Category</label>
+                    <select id="worker-folder" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <!-- Folders -->
+                    </select>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeWorkerModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all">Save Worker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- File Upload / Edit Modal -->
+    <div id="modal-file" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 id="file-modal-title" class="font-bold text-slate-800 text-base">Upload Downloadable File</h3>
+                <button onclick="closeFileModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-file" onsubmit="handleFileSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="file-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Document Title</label>
+                    <input type="text" id="file-title" required placeholder="e.g., UC Development Budget 2026.pdf" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">File Format / Category</label>
+                    <select id="file-type" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <option value="PDF">PDF Document</option>
+                        <option value="XLSX">Excel Spreadsheet</option>
+                        <option value="DOCX">Word Report</option>
+                        <option value="ZIP">Archive / Shapefile</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Select Folder</label>
+                    <select id="file-folder" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden bg-white">
+                        <!-- Folders -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Mock Download Link / URL</label>
+                    <input type="url" id="file-url" required placeholder="https://example.com/downloads/doc.pdf" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeFileModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all">Upload File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Folder Create Modal -->
+    <div id="modal-folder" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-base">Create New Folder</h3>
+                <button onclick="closeFolderModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-folder" onsubmit="handleFolderSubmit(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Folder Name</label>
+                    <input type="text" id="folder-name-input" required placeholder="e.g., North Zone / Reports" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:outline-hidden">
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeFolderModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all">Create Folder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        // Initial Mock Database State
+        let db = {
+            folders: [
+                { id: 'f-1', name: 'Central District Hub' },
+                { id: 'f-2', name: 'North Zone Tehsils' },
+                { id: 'f-3', name: 'South Rural Sector' },
+                { id: 'f-4', name: 'Official Forms & Policies' }
+            ],
+            tehsils: [
+                { id: 't-1', name: 'Tehsil City', folderId: 'f-1', description: 'Main urban administrative tehsil center.' },
+                { id: 't-2', name: 'Tehsil Saddar', folderId: 'f-1', description: 'Surrounding metropolitan suburban areas.' },
+                { id: 't-3', name: 'Tehsil Shalimar', folderId: 'f-2', description: 'Northern agricultural and residential corridor.' },
+                { id: 't-4', name: 'Tehsil Model Town', folderId: 'f-3', description: 'Southern planned commercial and residential zone.' }
+            ],
+            ucs: [
+                { id: 'uc-1', name: 'UC-01 Civil Lines', tehsilId: 't-1', folderId: 'f-1' },
+                { id: 'uc-2', name: 'UC-02 Anarkali', tehsilId: 't-1', folderId: 'f-1' },
+                { id: 'uc-3', name: 'UC-03 Gulberg', tehsilId: 't-2', folderId: 'f-1' },
+                { id: 'uc-4', name: 'UC-04 Shalimar Garden', tehsilId: 't-3', folderId: 'f-2' },
+                { id: 'uc-5', name: 'UC-05 Model Town East', tehsilId: 't-4', folderId: 'f-3' }
+            ],
+            workers: [
+                { id: 'w-1', name: 'Ahmed Raza', role: 'UC Secretary', tehsilId: 't-1', ucId: 'uc-1', phone: '+92 300 4567891', folderId: 'f-1' },
+                { id: 'w-2', name: 'Bilal Ahmed', role: 'Field Coordinator', tehsilId: 't-1', ucId: 'uc-2', phone: '+92 321 9876543', folderId: 'f-1' },
+                { id: 'w-3', name: 'Tariq Mahmood', role: 'Health Supervisor', tehsilId: 't-3', ucId: 'uc-4', phone: '+92 333 5544332', folderId: 'f-2' },
+                { id: 'w-4', name: 'Sobia Batool', role: 'Social Mobilizer', tehsilId: 't-4', ucId: 'uc-5', phone: '+92 312 7788990', folderId: 'f-3' }
+            ],
+            files: [
+                { id: 'file-1', title: 'District Development Plan 2026.pdf', type: 'PDF', folderId: 'f-4', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', date: 'Oct 12, 2026' },
+                { id: 'file-2', title: 'Union Council Budget Template.xlsx', type: 'XLSX', folderId: 'f-4', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', date: 'Oct 10, 2026' },
+                { id: 'file-3', title: 'Field Staff Duty Roster.pdf', type: 'PDF', folderId: 'f-1', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', date: 'Oct 08, 2026' },
+                { id: 'file-4', title: 'North Zone Survey Form.docx', type: 'DOCX', folderId: 'f-2', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', date: 'Sep 29, 2026' }
+            ]
+        };
+
+        // Active State Navigation & Filter
+        let currentTab = 'dashboard';
+        let currentFolderFilter = null; // null means all folders
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadAppData();
+            setupMobileMenu();
+        });
+
+        function setupMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const closeBtn = document.getElementById('sidebar-close');
+
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            });
+
+            const closeMenu = () => {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            };
+
+            closeBtn.addEventListener('click', closeMenu);
+            overlay.addEventListener('click', closeMenu);
+        }
+
+        function toggleQuickAddMenu() {
+            const menu = document.getElementById('quick-add-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        window.addEventListener('click', (e) => {
+            const menu = document.getElementById('quick-add-menu');
+            const btn = menu?.previousElementSibling;
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && !btn?.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            currentTab = tabId;
+            ['dashboard', 'tehsils', 'workers', 'files'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    if (nav) {
+                        nav.className = 'w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/20';
+                    }
+                } else {
+                    el.classList.add('hidden');
+                    if (nav) {
+                        nav.className = 'w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all';
+                    }
+                }
+            });
+            renderBreadcrumbs();
+            loadAppData();
+        }
+
+        // Filter by Folder from Sidebar Tree or Folder Cards
+        function filterByFolder(folderId) {
+            currentFolderFilter = folderId;
+            switchTab('tehsils');
+            showToast(`Filtered view by folder`, 'info');
+        }
+
+        function clearFolderFilter() {
+            currentFolderFilter = null;
+            loadAppData();
+            renderBreadcrumbs();
+        }
+
+        // Render Breadcrumbs
+        function renderBreadcrumbs() {
+            const list = document.getElementById('breadcrumb-list');
+            let html = `<li><a href="#" onclick="clearFolderFilter(); switchTab('dashboard'); return false;" class="hover:text-indigo-600 flex items-center gap-1 font-medium"><i data-lucide="home" class="w-3.5 h-3.5"></i> Home</a></li>`;
+            
+            if (currentFolderFilter) {
+                const folder = db.folders.find(f => f.id === currentFolderFilter);
+                if (folder) {
+                    html += `<li class="text-slate-400">/</li>`;
+                    html += `<li class="text-indigo-600 font-semibold flex items-center gap-1"><i data-lucide="folder" class="w-3.5 h-3.5"></i> ${folder.name}</li>`;
+                }
+            } else {
+                const tabNames = { dashboard: 'Dashboard Overview', tehsils: 'Tehsils & UCs', workers: 'Workers Directory', files: 'Downloadable Files' };
+                html += `<li class="text-slate-400">/</li>`;
+                html += `<li class="text-indigo-600 font-semibold capitalize">${tabNames[currentTab] || currentTab}</li>`;
+            }
+
+            list.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Main Data Render Function
+        function loadAppData() {
+            updateStats();
+            renderFolderTree();
+            renderDashboardFolderGrid();
+            renderTehsilsList();
+            renderWorkersTable();
+            renderFilesGrid();
+            populateDropdowns();
+            renderBreadcrumbs();
+            lucide.createIcons();
+        }
+
+        // Update Statistics Cards
+        function updateStats() {
+            document.getElementById('stat-tehsils').innerText = db.tehsils.length;
+            document.getElementById('stat-ucs').innerText = db.ucs.length;
+            document.getElementById('stat-workers').innerText = db.workers.length;
+            document.getElementById('stat-files').innerText = db.files.length;
+        }
+
+        // Render Folder Tree in Sidebar
+        function renderFolderTree() {
+            const container = document.getElementById('sidebar-folder-tree');
+            let html = `<button onclick="clearFolderFilter()" class="w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white flex items-center justify-between">
+                <span>📁 All Folders</span>
+                <span class="bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">${db.folders.length}</span>
+            </button>`;
+
+            db.folders.forEach(folder => {
+                const isSelected = currentFolderFilter === folder.id;
+                const activeClass = isSelected ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white';
+                
+                html += `
+                    <div class="group relative">
+                        <div class="flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs transition-all ${activeClass}">
+                            <button onclick="filterByFolder('${folder.id}')" class="flex items-center space-x-2 truncate flex-1 text-left">
+                                <i data-lucide="folder" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+                                <span class="truncate">${folder.name}</span>
+                            </button>
+                            <button onclick="deleteFolder('${folder.id}')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-400 p-1 transition-opacity" title="Delete Folder">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Render Dashboard Folder Cards Grid
+        function renderDashboardFolderGrid() {
+            const container = document.getElementById('dashboard-folder-grid');
+            let html = '';
+
+            db.folders.forEach(folder => {
+                const tehsilCount = db.tehsils.filter(t => t.folderId === folder.id).length;
+                const ucCount = db.ucs.filter(u => u.folderId === folder.id).length;
+                const fileCount = db.files.filter(f => f.folderId === folder.id).length;
+
+                html += `
+                    <div onclick="filterByFolder('${folder.id}')" class="p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer bg-slate-50/50 hover:bg-white group flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                    <i data-lucide="folder" class="w-4 h-4"></i>
+                                </div>
+                                <span class="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">${tehsilCount} Tehsils</span>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">${folder.name}</h4>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                            <span>${ucCount} UCs • ${fileCount} Files</span>
+                            <span class="text-indigo-600 font-medium flex items-center gap-0.5">Explore <i data-lucide="chevron-right" class="w-3 h-3"></i></span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<p class="text-xs text-slate-400 col-span-2">No folders created yet.</p>';
+        }
+
+        // Render Tehsils & UCs Accordion List
+        function renderTehsilsList(searchQuery = '') {
+            const container = document.getElementById('tehsils-container');
+            let filteredTehsils = db.tehsils;
+
+            if (currentFolderFilter) {
+                filteredTehsils = filteredTehsils.filter(t => t.folderId === currentFolderFilter);
+            }
+
+            if (searchQuery) {
+                filteredTehsils = filteredTehsils.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+            }
+
+            if (filteredTehsils.length === 0) {
+                container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center border border-slate-200"><p class="text-sm text-slate-500">No tehsils found matching criteria.</p></div>`;
+                return;
+            }
+
+            let html = '';
+            filteredTehsils.forEach(tehsil => {
+                const folder = db.folders.find(f => f.id === tehsil.folderId);
+                const tehsilUcs = db.ucs.filter(u => u.tehsilId === tehsil.id);
+                const tehsilWorkers = db.workers.filter(w => w.tehsilId === tehsil.id);
+
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                        <div class="p-5 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
+                                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="font-bold text-slate-800 text-base">${tehsilNameEscape(tehsil.name)}</h3>
+                                        ${folder ? `<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">${folder.name}</span>` : ''}
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-0.5">${tehsil.description || 'No description provided.'}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                <button onclick="openUcModalForTehsil('${tehsil.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Add UC</span>
+                                </button>
+                                <button onclick="openTehsilModal('${tehsil.id}')" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Tehsil">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteTehsil('${tehsil.id}')" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors" title="Delete Tehsil">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- UCs and Workers under this Tehsil -->
+                        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- UCs list -->
+                            <div>
+                                <h4 class="text-xs font-semibold uppercase text-slate-500 mb-3 flex items-center justify-between">
+                                    <span>Union Councils (${tehsilUcs.length})</span>
+                                </h4>
+                                <div class="space-y-2">
+                                    ${tehsilUcs.length > 0 ? tehsilUcs.map(uc => `
+                                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm">
+                                            <div class="flex items-center space-x-2">
+                                                <i data-lucide="flag" class="w-4 h-4 text-blue-600"></i>
+                                                <span class="font-medium text-slate-800">${uc.name}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-1">
+                                                <button onclick="openUcModal('${uc.id}')" class="text-slate-400 hover:text-indigo-600 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                                <button onclick="deleteUc('${uc.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p class="text-xs text-slate-400 italic">No Union Councils registered under this Tehsil yet.</p>'}
+                                </div>
+                            </div>
+
+                            <!-- Workers list -->
+                            <div>
+                                <h4 class="text-xs font-semibold uppercase text-slate-500 mb-3">Assigned Workers (${tehsilWorkers.length})</h4>
+                                <div class="space-y-2">
+                                    ${tehsilWorkers.length > 0 ? tehsilWorkers.map(w => `
+                                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-sm">
+                                            <div>
+                                                <p class="font-medium text-slate-800">${w.name} <span class="text-xs font-normal text-slate-500">(${w.role})</span></p>
+                                                <p class="text-xs text-slate-400 mt-0.5"><i data-lucide="phone" class="w-3 h-3 inline"></i> ${w.phone}</p>
+                                            </div>
+                                            <div class="flex items-center space-x-1">
+                                                <button onclick="openWorkerModal('${w.id}')" class="text-slate-400 hover:text-indigo-600 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                                <button onclick="deleteWorker('${w.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p class="text-xs text-slate-400 italic">No workers assigned to this tehsil.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function tehsilNameEscape(str) {
+            return str.replace(/"/g, '&quot;');
+        }
+
+        // Render Workers Table
+        function renderWorkersTable(searchQuery = '') {
+            const tbody = document.getElementById('workers-table-body');
+            let filtered = db.workers;
+
+            if (currentFolderFilter) {
+                filtered = filtered.filter(w => w.folderId === currentFolderFilter);
+            }
+
+            if (searchQuery) {
+                filtered = filtered.filter(w => 
+                    w.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    w.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    w.phone.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            document.getElementById('worker-count-label').innerText = `Showing ${filtered.length} workers`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No workers found.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(w => {
+                const tehsil = db.tehsils.find(t => t.id === w.tehsilId);
+                const uc = db.ucs.find(u => u.id === w.ucId);
+
+                html += `
+                    <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
+                        <td class="py-4 px-6 font-medium text-slate-800 flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                                ${w.name.charAt(0)}
+                            </div>
+                            <span>${w.name}</span>
+                        </td>
+                        <td class="py-4 px-6 text-slate-600">${w.role}</td>
+                        <td class="py-4 px-6 text-slate-600">
+                            <span class="font-medium text-slate-800">${tehsil ? tehsil.name : 'N/A'}</span>
+                            <span class="text-xs text-slate-400 block">${uc ? uc.name : ''}</span>
+                        </td>
+                        <td class="py-4 px-6 text-slate-600 font-mono text-xs">${w.phone}</td>
+                        <td class="py-4 px-6 text-right space-x-1">
+                            <button onclick="openWorkerModal('${w.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteWorker('${w.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function filterWorkersTable(val) {
+            renderWorkersTable(val);
+            lucide.createIcons();
+        }
+
+        // Render Downloadable Files Grid
+        function renderFilesGrid() {
+            const container = document.getElementById('files-grid-container');
+            let filtered = db.files;
+
+            if (currentFolderFilter) {
+                filtered = filtered.filter(f => f.folderId === currentFolderFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-3 bg-white p-8 rounded-2xl text-center border border-slate-200"><p class="text-sm text-slate-500">No downloadable files found in this category.</p></div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(file => {
+                const folder = db.folders.find(f => f.id === file.folderId);
+                const typeColors = {
+                    PDF: 'bg-rose-50 text-rose-600 border-rose-200',
+                    XLSX: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                    DOCX: 'bg-blue-50 text-blue-600 border-blue-200',
+                    ZIP: 'bg-amber-50 text-amber-600 border-amber-200'
+                };
+
+                html += `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition-all group">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-lg border ${typeColors[file.type] || 'bg-slate-50 text-slate-600 border-slate-200'}">${file.type}</span>
+                                <div class="flex items-center space-x-1">
+                                    <button onclick="openFileModal('${file.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg" title="Edit File"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                                    <button onclick="deleteFile('${file.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg" title="Delete File"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-base mb-1 group-hover:text-indigo-600 transition-colors">${file.title}</h4>
+                            <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">
+                                <i data-lucide="folder" class="w-3 h-3"></i> ${folder ? folder.name : 'General'} • Added ${file.date}
+                            </p>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-500">Ready to download</span>
+                            <a href="${file.url}" target="_blank" rel="noopener noreferrer" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 shadow-xs">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Download</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Global Search Handler across Tehsils and Workers
+        function handleGlobalSearch(query) {
+            if (!query) {
+                renderTehsilsList();
+                renderWorkersTable();
+                return;
+            }
+            renderTehsilsList(query);
+            renderWorkersTable(query);
+            lucide.createIcons();
+        }
+
+        // Populate Form Dropdowns
+        function populateDropdowns() {
+            const folderOpts = db.folders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+            const tehsilOpts = db.tehsils.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            
+            // Tehsil modal
+            document.getElementById('tehsil-folder').innerHTML = folderOpts;
+
+            // UC modal
+            document.getElementById('uc-tehsil').innerHTML = tehsilOpts;
+            document.getElementById('uc-folder').innerHTML = folderOpts;
+
+            // Worker modal
+            document.getElementById('worker-tehsil').innerHTML = tehsilOpts;
+            document.getElementById('worker-folder').innerHTML = folderOpts;
+            updateWorkerUcDropdown();
+
+            // File modal
+            document.getElementById('file-folder').innerHTML = folderOpts;
+        }
+
+        function updateWorkerUcDropdown() {
+            const tehsilId = document.getElementById('worker-tehsil').value;
+            const ucs = db.ucs.filter(u => u.tehsilId === tehsilId);
+            const ucSelect = document.getElementById('worker-uc');
+            ucSelect.innerHTML = ucs.length ? ucs.map(u => `<option value="${u.id}">${u.name}</option>`).join('') : '<option value="">No UCs in Tehsil</option>';
+        }
+
+        // --- CRUD Modal Open & Submit Handlers ---
+
+        // Tehsil
+        function openTehsilModal(id = null) {
+            const modal = document.getElementById('modal-tehsil');
+            const title = document.getElementById('tehsil-modal-title');
+            document.getElementById('form-tehsil').reset();
+            document.getElementById('tehsil-id').value = '';
+
+            if (id) {
+                title.innerText = 'Edit Tehsil';
+                const tehsil = db.tehsils.find(t => t.id === id);
+                if (tehsil) {
+                    document.getElementById('tehsil-id').value = tehsil.id;
+                    document.getElementById('tehsil-name').value = tehsil.name;
+                    document.getElementById('tehsil-folder').value = tehsil.folderId;
+                    document.getElementById('tehsil-desc').value = tehsil.description || '';
+                }
+            } else {
+                title.innerText = 'Add New Tehsil';
+                if (currentFolderFilter) document.getElementById('tehsil-folder').value = currentFolderFilter;
+            }
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeTehsilModal() {
+            document.getElementById('modal-tehsil').classList.add('hidden');
+        }
+
+        function handleTehsilSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('tehsil-id').value;
+            const name = document.getElementById('tehsil-name').value;
+            const folderId = document.getElementById('tehsil-folder').value;
+            const description = document.getElementById('tehsil-desc').value;
+
+            if (id) {
+                const tehsil = db.tehsils.find(t => t.id === id);
+                if (tehsil) {
+                    tehsil.name = name;
+                    tehsil.folderId = folderId;
+                    tehsil.description = description;
+                    showToast('Tehsil updated successfully', 'success');
+                }
+            } else {
+                const newTehsil = {
+                    id: 't-' + Date.now(),
+                    name,
+                    folderId,
+                    description
+                };
+                db.tehsils.push(newTehsil);
+                showToast('New Tehsil registered successfully', 'success');
+            }
+            closeTehsilModal();
+            loadAppData();
+        }
+
+        function deleteTehsil(id) {
+            if (confirm('Are you sure you want to delete this Tehsil? Associated UCs will also be removed.')) {
+                db.tehsils = db.tehsils.filter(t => t.id !== id);
+                db.ucs = db.ucs.filter(u => u.tehsilId !== id);
+                db.workers = db.workers.filter(w => w.tehsilId !== id);
+                showToast('Tehsil deleted successfully', 'info');
+                loadAppData();
+            }
+        }
+
+        // Union Council (UC)
+        function openUcModal(id = null) {
+            const modal = document.getElementById('modal-uc');
+            const title = document.getElementById('uc-modal-title');
+            document.getElementById('form-uc').reset();
+            document.getElementById('uc-id').value = '';
+            populateDropdowns();
+
+            if (id) {
+                title.innerText = 'Edit Union Council';
+                const uc = db.ucs.find(u => u.id === id);
+                if (uc) {
+                    document.getElementById('uc-id').value = uc.id;
+                    document.getElementById('uc-name').value = uc.name;
+                    document.getElementById('uc-tehsil').value = uc.tehsilId;
+                    document.getElementById('uc-folder').value = uc.folderId;
+                }
+            } else {
+                title.innerText = 'Add Union Council (UC)';
+            }
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function openUcModalForTehsil(tehsilId) {
+            openUcModal();
+            document.getElementById('uc-tehsil').value = tehsilId;
+            const tehsil = db.tehsils.find(t => t.id === tehsilId);
+            if (tehsil) document.getElementById('uc-folder').value = tehsil.folderId;
+        }
+
+        function closeUcModal() {
+            document.getElementById('modal-uc').classList.add('hidden');
+        }
+
+        function handleUcSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('uc-id').value;
+            const name = document.getElementById('uc-name').value;
+            const tehsilId = document.getElementById('uc-tehsil').value;
+            const folderId = document.getElementById('uc-folder').value;
+
+            if (id) {
+                const uc = db.ucs.find(u => u.id === id);
+                if (uc) {
+                    uc.name = name;
+                    uc.tehsilId = tehsilId;
+                    uc.folderId = folderId;
+                    showToast('Union Council updated successfully', 'success');
+                }
+            } else {
+                const newUc = {
+                    id: 'uc-' + Date.now(),
+                    name,
+                    tehsilId,
+                    folderId
+                };
+                db.ucs.push(newUc);
+                showToast('New Union Council added successfully', 'success');
+            }
+            closeUcModal();
+            loadAppData();
+        }
+
+        function deleteUc(id) {
+            if (confirm('Delete this Union Council?')) {
+                db.ucs = db.ucs.filter(u => u.id !== id);
+                db.workers = db.workers.filter(w => w.ucId !== id);
+                showToast('Union Council deleted', 'info');
+                loadAppData();
+            }
+        }
+
+        // Worker
+        function openWorkerModal(id = null) {
+            const modal = document.getElementById('modal-worker');
+            const title = document.getElementById('worker-modal-title');
+            document.getElementById('form-worker').reset();
+            document.getElementById('worker-id').value = '';
+            populateDropdowns();
+
+            if (id) {
+                title.innerText = 'Edit Worker Details';
+                const worker = db.workers.find(w => w.id === id);
+                if (worker) {
+                    document.getElementById('worker-id').value = worker.id;
+                    document.getElementById('worker-name').value = worker.name;
+                    document.getElementById('worker-role').value = worker.role;
+                    document.getElementById('worker-tehsil').value = worker.tehsilId;
+                    updateWorkerUcDropdown();
+                    document.getElementById('worker-uc').value = worker.ucId;
+                    document.getElementById('worker-phone').value = worker.phone;
+                    document.getElementById('worker-folder').value = worker.folderId;
+                }
+            } else {
+                title.innerText = 'Onboard Field Worker';
+                if (currentFolderFilter) document.getElementById('worker-folder').value = currentFolderFilter;
+            }
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeWorkerModal() {
+            document.getElementById('modal-worker').classList.add('hidden');
+        }
+
+        function handleWorkerSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('worker-id').value;
+            const name = document.getElementById('worker-name').value;
+            const role = document.getElementById('worker-role').value;
+            const tehsilId = document.getElementById('worker-tehsil').value;
+            const ucId = document.getElementById('worker-uc').value;
+            const phone = document.getElementById('worker-phone').value;
+            const folderId = document.getElementById('worker-folder').value;
+
+            if (id) {
+                const worker = db.workers.find(w => w.id === id);
+                if (worker) {
+                    worker.name = name;
+                    worker.role = role;
+                    worker.tehsilId = tehsilId;
+                    worker.ucId = ucId;
+                    worker.phone = phone;
+                    worker.folderId = folderId;
+                    showToast('Worker details updated', 'success');
+                }
+            } else {
+                const newWorker = {
+                    id: 'w-' + Date.now(),
+                    name,
+                    role,
+                    tehsilId,
+                    ucId,
+                    phone,
+                    folderId
+                };
+                db.workers.push(newWorker);
+                showToast('Worker onboarded successfully', 'success');
+            }
+            closeWorkerModal();
+            loadAppData();
+        }
+
+        function deleteWorker(id) {
+            if (confirm('Remove this worker from directory?')) {
+                db.workers = db.workers.filter(w => w.id !== id);
+                showToast('Worker removed', 'info');
+                loadAppData();
+            }
+        }
+
+        // File
+        function openFileModal(id = null) {
+            const modal = document.getElementById('modal-file');
+            const title = document.getElementById('file-modal-title');
+            document.getElementById('form-file').reset();
+            document.getElementById('file-id').value = '';
+            populateDropdowns();
+
+            if (id) {
+                title.innerText = 'Edit File Details';
+                const file = db.files.find(f => f.id === id);
+                if (file) {
+                    document.getElementById('file-id').value = file.id;
+                    document.getElementById('file-title').value = file.title;
+                    document.getElementById('file-type').value = file.type;
+                    document.getElementById('file-folder').value = file.folderId;
+                    document.getElementById('file-url').value = file.url;
+                }
+            } else {
+                title.innerText = 'Upload Downloadable File';
+                if (currentFolderFilter) document.getElementById('file-folder').value = currentFolderFilter;
+            }
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeFileModal() {
+            document.getElementById('modal-file').classList.add('hidden');
+        }
+
+        function handleFileSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('file-id').value;
+            const title = document.getElementById('file-title').value;
+            const type = document.getElementById('file-type').value;
+            const folderId = document.getElementById('file-folder').value;
+            const url = document.getElementById('file-url').value;
+
+            const options = { month: 'short', day: '2-digit', year: 'numeric' };
+            const dateStr = new Date().toLocaleDateString('en-US', options);
+
+            if (id) {
+                const file = db.files.find(f => f.id === id);
+                if (file) {
+                    file.title = title;
+                    file.type = type;
+                    file.folderId = folderId;
+                    file.url = url;
+                    showToast('File details updated', 'success');
+                }
+            } else {
+                const newFile = {
+                    id: 'file-' + Date.now(),
+                    title,
+                    type,
+                    folderId,
+                    url,
+                    date: dateStr
+                };
+                db.files.push(newFile);
+                showToast('File uploaded successfully', 'success');
+            }
+            closeFileModal();
+            loadAppData();
+        }
+
+        function deleteFile(id) {
+            if (confirm('Delete this downloadable file?')) {
+                db.files = db.files.filter(f => f.id !== id);
+                showToast('File deleted', 'info');
+                loadAppData();
+            }
+        }
+
+        // Folder Modal
+        function openFolderModal() {
+            document.getElementById('form-folder').reset();
+            document.getElementById('modal-folder').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeFolderModal() {
+            document.getElementById('modal-folder').classList.add('hidden');
+        }
+
+        function handleFolderSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('folder-name-input').value;
+            const newFolder = {
+                id: 'f-' + Date.now(),
+                name
+            };
+            db.folders.push(newFolder);
+            closeFolderModal();
+            showToast('New folder created successfully', 'success');
+            loadAppData();
+        }
+
+        function deleteFolder(id) {
+            if (confirm('Delete this folder? Tehsils and files inside will be unassigned.')) {
+                db.folders = db.folders.filter(f => f.id !== id);
+                if (currentFolderFilter === id) currentFolderFilter = null;
+                showToast('Folder deleted', 'info');
+                loadAppData();
+            }
+        }
+
+        // Toast Notifications Helper (Replacing alert())
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-900/90 text-emerald-100 border-emerald-700',
+                info: 'bg-slate-900/90 text-slate-100 border-slate-700',
+                error: 'bg-rose-900/90 text-rose-100 border-rose-700'
+            };
+
+            const icons = {
+                success: 'check-circle',
+                info: 'info',
+                error: 'alert-triangle'
+            };
+
+            toast.className = `flex items-center space-x-3 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-sm font-medium transition-all transform translate-y-2 opacity-0 pointer-events-auto ${bgColors[type] || bgColors.success}`;
+            toast.innerHTML = `<i data-lucide="${icons[type] || 'check-circle'}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
